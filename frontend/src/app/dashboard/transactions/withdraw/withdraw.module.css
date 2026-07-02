@@ -1,0 +1,367 @@
+.pageContainer {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(0deg, #FAF8FF, #FAF8FF), #FFFFFF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 24px;
+}
+
+.withdrawCard {
+  background: #FFFFFF;
+  border: 1px solid #C3C6D5;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.05), 0px 1px 2px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  padding: 32px 32px 48px;
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #E7E7F0;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #191B22;
+  margin: 0;
+}
+
+.cardSubtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #434653;
+  margin: 0;
+}
+
+.headerIconBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 48px;
+  height: 48px;
+  background: #F3F3FC;
+  border: 1px solid #C3C6D5;
+  border-radius: 12px;
+  color: #00327D;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.formLabel {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #191B22;
+}
+
+.formLabelSub {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #434653;
+}
+
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.selectInput, .textInput, .textareaInput {
+  width: 100%;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid #C3C6D5;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #191B22;
+  box-sizing: border-box;
+  appearance: none;
+}
+
+.selectInput {
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.selectIcon {
+  position: absolute;
+  right: 16px;
+  pointer-events: none;
+  color: #737784;
+}
+
+.balanceNotice {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #434653;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.amountGroup {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #C3C6D5;
+  border-radius: 4px;
+  height: 44px;
+  overflow: hidden;
+}
+
+.amountGroupError {
+  background: rgba(255, 218, 214, 0.1);
+  border: 1px solid #BA1A1A;
+}
+
+.currencyPrefix {
+  padding: 0 16px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #434653;
+  border-right: 1px solid #C3C6D5;
+}
+
+.amountGroupError .currencyPrefix {
+  border-color: #BA1A1A;
+}
+
+.amountInput {
+  flex-grow: 1;
+  border: none;
+  padding: 11px 32px 11px 16px;
+  font-size: 16px;
+  outline: none;
+  color: #191B22;
+  background: transparent;
+}
+
+.errorIcon {
+  position: absolute;
+  right: 12px;
+  color: #BA1A1A;
+}
+
+.errorText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #BA1A1A;
+  margin-top: 4px;
+}
+
+.textareaInput {
+  resize: vertical;
+  min-height: 82px;
+}
+
+.actionsRow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.cancelLink {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #434653;
+  text-decoration: none;
+  padding: 8px 16px;
+}
+
+.confirmBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 32px;
+  background: #0047AB;
+  border-radius: 4px;
+  border: none;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Success Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.successModal {
+  background: #FFFFFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.modalIconBox {
+  color: #16A34A;
+  background: #F0FDF4;
+  padding: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #737784;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modalTitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: #191B22;
+  margin: 0 0 8px 0;
+}
+
+.modalSubtitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #434653;
+  margin: 0 0 24px 0;
+}
+
+.modalDetails {
+  background: #F8F9FC;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #E2E2EB;
+}
+
+.modalDetailLabel {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #737784;
+}
+
+.modalDetailValue {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #191B22;
+}
+
+.modalDetailValueRef {
+  font-family: 'Liberation Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  color: #191B22;
+}
+
+.modalActionBtn {
+  flex: 1;
+  padding: 12px;
+  background: #00327D;
+  border: none;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.modalReceiptBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #FFFFFF;
+  border: 1px solid #16A34A;
+  border-radius: 4px;
+  color: #16A34A;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+}

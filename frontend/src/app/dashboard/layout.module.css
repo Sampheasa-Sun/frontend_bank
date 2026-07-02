@@ -134,6 +134,18 @@
   width: 100%;
 }
 
+/* Hidden on mobile — Profile Settings is in the nav list instead */
+.navItemMobileOnly {
+  display: none;
+}
+
+/* Adds a top divider line to visually separate Profile Settings */
+.navItemSeparator {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #C3C6D5;
+}
+
 .bottomActionsBorder {
   display: flex;
   flex-direction: column;
@@ -240,6 +252,16 @@
 
   .navLinks {
     flex-grow: 0;
+  }
+
+  /* Show Profile Settings in nav list on mobile */
+  .navItemMobileOnly {
+    display: block;
+  }
+
+  /* Hide the bottom actions section on mobile (Profile Settings is in nav instead) */
+  .bottomActions {
+    display: none;
   }
 
   .mobileOverlay {

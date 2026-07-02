@@ -1,0 +1,313 @@
+.pageContainer {
+  position: relative;
+  min-height: 100vh;
+  background: #FAF8FF;
+  padding: 32px 24px;
+}
+
+.headerContainer {
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #434653;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.backLink:hover {
+  color: #0047AB;
+}
+
+.heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: #191B22;
+  margin: 0 0 8px 0;
+}
+
+.subText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #434653;
+  margin: 0;
+}
+
+.billsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.billCard {
+  background: #FFFFFF;
+  border: 1px solid #E2E2EB;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.billCard:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.billerInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.billerIconBox {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #F8F9FC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0047AB;
+}
+
+.billerText {
+  display: flex;
+  flex-direction: column;
+}
+
+.billerName {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #191B22;
+}
+
+.billerType {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #737784;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.statusPending {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.statusPaid {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.cardMiddle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #E2E2EB;
+}
+
+.amountLabel {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: #737784;
+}
+
+.amountValue {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 32px;
+  color: #191B22;
+}
+
+.dueDateInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #434653;
+}
+
+.dueDateInfo.overdue {
+  color: #DC2626;
+}
+
+.cardBottom {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.payBtn {
+  flex: 1;
+  background: #0047AB;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.payBtn:hover {
+  background: #00327D;
+}
+
+.autopayBtn {
+  flex: 1;
+  background: #FFFFFF;
+  color: #434653;
+  border: 1px solid #E2E2EB;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.autopayBtn:hover {
+  border-color: #0047AB;
+  color: #0047AB;
+}
+
+.paidText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #737784;
+  text-align: center;
+  width: 100%;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalDialog {
+  background: #FFFFFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalTitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  color: #191B22;
+  margin: 0 0 24px 0;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #434653;
+}
+
+.selectInput {
+  appearance: none;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #191B22;
+  width: 100%;
+  outline: none;
+}
+
+.btnGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #434653;
+  cursor: pointer;
+}
+
+.primaryBtn {
+  flex: 1;
+  background: #0047AB;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #FFFFFF;
+  cursor: pointer;
+}

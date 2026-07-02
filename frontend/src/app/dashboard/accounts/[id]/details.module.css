@@ -617,3 +617,103 @@
   color: #1D4ED8;
 }
 
+/* Disabled Transfer button (Fixed Deposit accounts) */
+.actionBtnDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.actionIconBoxDisabled {
+  background: #E7E7F0;
+}
+
+.actionTextDisabled {
+  color: #6B7280;
+}
+
+.actionSubText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: #9CA3AF;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ============ MOBILE RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 16px;
+  }
+
+  .topCard {
+    padding: 20px 16px;
+    margin-bottom: 20px;
+  }
+
+  .topCardHeader {
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .accountTitle {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .mainBalance {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+  .actionsGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .actionBtn {
+    padding: 16px 8px;
+  }
+
+  .actionIconBox {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .actionText {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .mainLayout {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .rightColumn {
+    width: 100%;
+  }
+
+  .tableHeader {
+    grid-template-columns: 80px 1fr 80px 70px;
+    padding: 12px 16px;
+  }
+
+  .transactionRow {
+    grid-template-columns: 80px 1fr 80px 70px;
+    padding: 12px 16px;
+  }
+
+  .mainBalance {
+    font-size: 30px;
+    word-break: break-all;
+  }
+
+  .balanceValueArea {
+    flex-wrap: wrap;
+  }
+}

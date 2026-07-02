@@ -196,9 +196,14 @@ export default function Transactions() {
           <h1 className={styles.heading}>Transaction</h1>
           <p className={styles.subText}>Review your past transactions, filter records, and export statements.</p>
         </div>
-        <Link href="/dashboard/transactions/transfer" className={styles.transferBtn}>
-          Transfer
-        </Link>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link href="/dashboard/transactions/bills" className={styles.transferBtn} style={{ background: '#FFFFFF', color: '#0047AB', border: '1px solid #0047AB' }}>
+            Pay Bill
+          </Link>
+          <Link href="/dashboard/transactions/transfer" className={styles.transferBtn}>
+            Transfer
+          </Link>
+        </div>
       </div>
 
       <div className={styles.filterCard}>

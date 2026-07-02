@@ -11,6 +11,58 @@ export default function OpenNewAccount() {
   const [maturityAction, setMaturityAction] = useState('auto-renew');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [initialDeposit, setInitialDeposit] = useState('');
+  const [termLength, setTermLength] = useState('12');
+  const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [fundingAccountId, setFundingAccountId] = useState('');
+
+  // helper functions for dynamic fixed deposit summary
+  const getInterestRate = () => {
+    if (termLength === '6') return 4.25;
+    if (termLength === '12') return 5.50;
+    if (termLength === '24') return 6.00;
+    return 5.50;
+  };
+
+  const getDisplayDeposit = () => {
+    const parsed = parseFloat(initialDeposit);
+    if (!isNaN(parsed) && initialDeposit !== '') {
+      return parsed;
+    }
+    return 10000;
+  };
+
+  const calculateInterest = () => {
+    const deposit = getDisplayDeposit();
+    const rate = getInterestRate() / 100;
+    const months = parseInt(termLength, 10) || 12;
+    return deposit * rate * (months / 12);
+  };
+
+  const getMaturityDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + (parseInt(termLength, 10) || 12));
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+
+  const showModal = (title, message) => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalOpen(true);
+  };
+
+  React.useEffect(() => {
+    const existingAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
+    const eligible = existingAccounts.filter(a => a.type !== 'Fixed Deposit' && a.type !== 'Loan Account');
+    setAvailableAccounts(eligible);
+    if (eligible.length > 0) {
+      setFundingAccountId(eligible[0].id);
+    }
+  }, []);
 
   const handleOpenAccount = (e) => {
     e.preventDefault();
@@ -18,6 +70,43 @@ export default function OpenNewAccount() {
 
     // Save to local storage
     const existingAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
+    
+    // Check if initial deposit is more than funding account balance
+    if (initialDeposit) {
+      const depositAmount = parseFloat(initialDeposit);
+      if (depositAmount > 0) {
+        const fundingAccount = existingAccounts.find(a => a.id === fundingAccountId) || existingAccounts[0];
+        if (fundingAccount) {
+          const balanceNum = parseFloat(fundingAccount.balance.replace(/[^0-9.-]+/g, ""));
+          if (depositAmount > balanceNum) {
+            showModal('Insufficient Funds', `Your selected account only has ${fundingAccount.balance}.`);
+            return;
+          }
+          
+          // Deduct the balance from the funding account
+          fundingAccount.balance = `$${(balanceNum - depositAmount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          
+          // Record the transaction
+          const storedTrx = JSON.parse(localStorage.getItem('user_transactions') || '[]');
+          const newTrx = {
+            id: `TRX-${Math.floor(10000000 + Math.random() * 90000000)}`,
+            merchant: `Transfer to New Account`,
+            category: 'Transfer',
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            ref: `REF-${Math.floor(10000000 + Math.random() * 90000000)}`,
+            status: 'Cleared',
+            amount: `-$${depositAmount.toFixed(2)}`,
+            type: 'negative',
+            iconType: 'transfer',
+            fromAccount: fundingAccount.name,
+            description: `Initial funding for new ${accountType} account`
+          };
+          localStorage.setItem('user_transactions', JSON.stringify([newTrx, ...storedTrx]));
+        }
+      }
+    }
+
     
     let accountName = '';
     let bgColor = '';
@@ -37,13 +126,18 @@ export default function OpenNewAccount() {
       iconColor = '#434653';
     }
 
+    let cards = JSON.parse(localStorage.getItem('user_cards') || '[]');
+    let defaultCardsList = cards.length > 0 ? cards : [{last4: '4821'}, {last4: '9901'}];
+    const randomCard = defaultCardsList[Math.floor(Math.random() * defaultCardsList.length)];
+    const isLoanOrFixed = accountType.toLowerCase().includes('loan') || accountType.toLowerCase().includes('fixed');
+
     const newAccount = {
       id: `acc-${Date.now()}`,
-      type: accountType.charAt(0).toUpperCase() + accountType.slice(1),
+      type: accountType === 'fixed' ? 'Fixed Deposit' : (accountType.charAt(0).toUpperCase() + accountType.slice(1)),
       name: accountName,
-      mask: '**** ' + Math.floor(1000 + Math.random() * 9000),
+      mask: isLoanOrFixed ? '' : `**** ${randomCard.last4}`,
+      accountNumber: Math.floor(100000000000 + Math.random() * 900000000000).toString(),
       balance: `$${initialDeposit || (accountType === 'fixed' ? '10000.00' : '0.00')}`,
-      equivalent: '≈ 0 KHR',
       status: 'Active',
       bgColor: bgColor,
       iconColor: iconColor,
@@ -165,7 +259,7 @@ export default function OpenNewAccount() {
                   onChange={(e) => setInitialDeposit(e.target.value.replace(/[^0-9.]/g, ''))}
                 />
                 <span className={styles.helpText}>
-                  {accountType === 'savings' ? 'Funds will be transferred from your primary checking account.' : 'You can fund your account now or later.'}
+                  Funds will be transferred from your primary checking account.
                 </span>
               </div>
 
@@ -192,25 +286,42 @@ export default function OpenNewAccount() {
                   value={initialDeposit}
                   onChange={(e) => setInitialDeposit(e.target.value.replace(/[^0-9.]/g, ''))}
                 />
-                <span className={styles.helpText} style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                <span className={styles.helpText} style={{display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px'}}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                   Minimum deposit required is $1,000.
+                </span>
+                <span className={styles.helpText}>
+                  Funds will be transferred from your primary checking account.
                 </span>
               </div>
 
               <div style={{display: 'flex', gap: '16px'}}>
                 <div className={styles.formGroup} style={{flex: 1}}>
                   <label className={styles.label}>Term Length</label>
-                  <select className={styles.selectInput}>
-                    <option>12 Months (5.50% APY)</option>
-                    <option>6 Months (4.25% APY)</option>
-                    <option>24 Months (6.00% APY)</option>
+                  <select 
+                    className={styles.selectInput}
+                    value={termLength}
+                    onChange={(e) => setTermLength(e.target.value)}
+                  >
+                    <option value="6">6 Months (4.25% APY)</option>
+                    <option value="12">12 Months (5.50% APY)</option>
+                    <option value="24">24 Months (6.00% APY)</option>
                   </select>
                 </div>
                 <div className={styles.formGroup} style={{flex: 1}}>
                   <label className={styles.label}>Fund From Account</label>
-                  <select className={styles.selectInput}>
-                    <option>Everyday Checking (...4829) - $14,250.00</option>
+                  <select 
+                    className={styles.selectInput}
+                    value={fundingAccountId}
+                    onChange={(e) => setFundingAccountId(e.target.value)}
+                  >
+                    {availableAccounts.length > 0 ? availableAccounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.mask}) - {acc.balance}
+                      </option>
+                    )) : (
+                      <option value="">No funding accounts available</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -307,26 +418,26 @@ export default function OpenNewAccount() {
               <span className={styles.summaryLabel} style={{marginBottom: '16px'}}>Account Summary</span>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryRowLabel}>Initial Deposit</span>
-                <span className={styles.summaryRowValue}>$10,000.00</span>
+                <span className={styles.summaryRowValue}>${getDisplayDeposit().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryRowLabel}>Term Length</span>
-                <span className={styles.summaryRowValue}>12 Months</span>
+                <span className={styles.summaryRowValue}>{termLength} Months</span>
               </div>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryRowLabel}>Interest Rate (APY)</span>
-                <span className={styles.summaryRowValueBlue}>5.50% Fixed</span>
+                <span className={styles.summaryRowValueBlue}>{getInterestRate().toFixed(2)}% Fixed</span>
               </div>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryRowLabel}>Maturity Date</span>
-                <span className={styles.summaryRowValue}>Oct 24, 2024</span>
+                <span className={styles.summaryRowValue}>{getMaturityDate()}</span>
               </div>
               
               <div className={styles.summaryDivider} style={{margin: '16px 0'}}></div>
               
               <div className={styles.summaryGroup}>
                 <span className={styles.summaryLabel}>ESTIMATED INTEREST AT MATURITY</span>
-                <span className={styles.summaryValueLarge}>$550.00</span>
+                <span className={styles.summaryValueLarge}>${calculateInterest().toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
 
               <div className={styles.alertBox}>
@@ -362,6 +473,18 @@ export default function OpenNewAccount() {
           <button className={styles.cancelBtn} onClick={() => router.back()}>Cancel</button>
         </div>
       </div>
+
+      {modalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalDialog}>
+            <h3 className={styles.modalTitle}>{modalTitle}</h3>
+            <p className={styles.modalMessage}>{modalMessage}</p>
+            <button className={styles.modalCloseBtn} onClick={() => setModalOpen(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

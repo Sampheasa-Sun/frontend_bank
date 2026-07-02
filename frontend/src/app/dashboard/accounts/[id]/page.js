@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import styles from './details.module.css';
+import { generateStatement } from '../../../../utils/generateStatement';
 import { MOCK_TRANSACTIONS, generateTransactions } from '../../transactions/mockData';
 
 export default function AccountDetails() {
@@ -99,7 +100,47 @@ export default function AccountDetails() {
   };
 
   const confirmDelete = () => {
-    const newAccounts = allAccounts.filter(a => a.id !== params.id);
+    let newAccounts = allAccounts.filter(a => a.id !== params.id);
+    const accountToDelete = allAccounts.find(a => a.id === params.id);
+    
+    if (accountToDelete) {
+      const balanceToTransfer = parseFloat(accountToDelete.balance.replace(/[^0-9.-]+/g, ""));
+      
+      if (balanceToTransfer > 0 && newAccounts.length > 0) {
+        // Find default account or fallback to first available
+        const defaultId = localStorage.getItem('default_account_id');
+        let fallbackAccount = newAccounts.find(a => a.id === defaultId) 
+          || newAccounts.find(a => a.type === 'Checking') 
+          || newAccounts[0];
+          
+        if (fallbackAccount) {
+          const fallbackBalance = parseFloat(fallbackAccount.balance.replace(/[^0-9.-]+/g, ""));
+          fallbackAccount.balance = `$${(fallbackBalance + balanceToTransfer).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          
+          // Replace fallbackAccount in newAccounts array
+          newAccounts = newAccounts.map(a => a.id === fallbackAccount.id ? fallbackAccount : a);
+          
+          // Record the transfer transaction
+          const storedTrx = JSON.parse(localStorage.getItem('user_transactions') || '[]');
+          const newTrx = {
+            id: `TRX-${Math.floor(10000000 + Math.random() * 90000000)}`,
+            merchant: `Transfer from Closed Account`,
+            category: 'Transfer',
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            ref: `REF-${Math.floor(10000000 + Math.random() * 90000000)}`,
+            status: 'Cleared',
+            amount: `+$${balanceToTransfer.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+            type: 'positive',
+            iconType: 'transfer',
+            fromAccount: accountToDelete.name,
+            description: `Balance transfer from closed ${accountToDelete.type} account`
+          };
+          localStorage.setItem('user_transactions', JSON.stringify([newTrx, ...storedTrx]));
+        }
+      }
+    }
+
     localStorage.setItem('user_accounts', JSON.stringify(newAccounts));
     router.push('/dashboard/accounts');
   };
@@ -125,25 +166,8 @@ export default function AccountDetails() {
   };
 
   const handleDownloadStatement = () => {
-    const mockTransactionsData = [
-      ['Date', 'Description', 'Amount', 'Status'],
-      ['Oct 24, 2023', 'Equinox Wealth Management', '-$2,500.00', 'Completed'],
-      ['Oct 22, 2023', 'ACH Deposit - ACME Corp', '+$14,250.00', 'Completed'],
-      ['Oct 20, 2023', 'Amex Platinum Payment', '-$4,120.55', 'Pending'],
-      ['Oct 18, 2023', 'Wire Transfer - Inbound', '+$50,000.00', 'Completed'],
-      ['Oct 15, 2023', 'Le Bernardin', '-$485.00', 'Completed'],
-    ];
-
-    const csvContent = mockTransactionsData.map(e => e.map(item => `"${item}"`).join(",")).join("\n");
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Statement_${account ? account.name.replace(/\s+/g, '_') : 'Account'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!account) return;
+    generateStatement(account, transactions, 'All Time');
   };
   
   return (
@@ -161,7 +185,7 @@ export default function AccountDetails() {
         <div className={styles.topCardHeader}>
           <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
             <h1 className={styles.accountTitle}>{account ? account.name : 'Premier Checking'}</h1>
-            {account && account.type !== 'Loan Account' && (
+            {account && !account.type.toLowerCase().includes('loan') && !account.type.toLowerCase().includes('fixed') && (
               <span className={styles.accountMask}>{account.mask}</span>
             )}
             <div className={styles.activeBadge}>
@@ -201,37 +225,38 @@ export default function AccountDetails() {
           <span className={styles.balanceLabel}>Available Balance</span>
           <div className={styles.balanceValueArea}>
             <span className={styles.mainBalance}>{account ? account.balance : '$124,592.00'}</span>
-            <span className={styles.equivalentBalance}>{account && account.equivalent && account.equivalent !== '≈ 0 KHR' ? account.equivalent : '≈ €115,247.60 EUR'}</span>
           </div>
         </div>
       </div>
 
-      <div className={styles.actionsGrid}>
-        <Link href="/dashboard/transactions/transfer" className={styles.actionBtn}>
-          <div className={styles.actionIconBox}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 3 21 3 21 8"></polyline>
-              <line x1="4" y1="20" x2="21" y2="3"></line>
-              <polyline points="21 16 21 21 16 21"></polyline>
-              <line x1="15" y1="15" x2="21" y2="21"></line>
-              <line x1="4" y1="4" x2="9" y2="9"></line>
-            </svg>
+      {account && !account.type.toLowerCase().includes('fixed') && (
+        <div className={styles.actionsGrid}>
+          <Link href="/dashboard/transactions/transfer" className={styles.actionBtn}>
+            <div className={styles.actionIconBox}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </div>
+            <span className={styles.actionText}>Transfer</span>
+          </Link>
+          <div className={styles.actionBtn} onClick={handleDownloadStatement}>
+            <div className={styles.actionIconBox}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <span className={styles.actionText}>Download Statement</span>
           </div>
-          <span className={styles.actionText}>Transfer</span>
-        </Link>
-        <div className={styles.actionBtn} onClick={handleDownloadStatement}>
-          <div className={styles.actionIconBox}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </div>
-          <span className={styles.actionText}>Download Statement</span>
         </div>
-      </div>
+      )}
 
       <div className={styles.mainLayout}>
         <div className={styles.leftColumn}>

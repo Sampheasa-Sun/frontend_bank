@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, Home, Zap, Music, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Home, Zap, Music, MoreHorizontal, RefreshCw, Target, Plus, X } from 'lucide-react';
 import styles from './analytics.module.css';
 import { MOCK_TRANSACTIONS, generateTransactions } from '../transactions/mockData';
 
@@ -45,6 +45,14 @@ export default function AnalyticsPage() {
   const [hoveredBar, setHoveredBar] = useState(null);
   const [allTransactions, setAllTransactions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
+  
+  // Goals State
+  const [goals, setGoals] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [newGoalName, setNewGoalName] = useState('');
+  const [newGoalTarget, setNewGoalTarget] = useState('');
+  const [newGoalAccount, setNewGoalAccount] = useState('');
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('user_transactions') || '[]');
@@ -52,11 +60,48 @@ export default function AnalyticsPage() {
     const all = [...stored, ...MOCK_TRANSACTIONS, ...generated];
     setAllTransactions(all);
 
+    const storedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
+    setAccounts(storedAccounts.filter(a => !a.type.toLowerCase().includes('loan')));
+    
+    const storedGoals = JSON.parse(localStorage.getItem('user_goals') || '[]');
+    setGoals(storedGoals);
+
     // Default to the most recent month present
     const months = [...new Set(all.map(t => toMonthKey(t.date)).filter(Boolean))];
     months.sort((a, b) => new Date(b) - new Date(a));
     setSelectedMonth(months[0] || '');
   }, []);
+
+  const handleCreateGoal = (e) => {
+    e.preventDefault();
+    if (!newGoalName || !newGoalTarget || !newGoalAccount) return;
+    
+    const targetAmt = parseFloat(newGoalTarget);
+    if (isNaN(targetAmt) || targetAmt <= 0) return;
+
+    const newGoal = {
+      id: `GOAL-${Date.now()}`,
+      name: newGoalName,
+      targetAmount: targetAmt,
+      accountId: newGoalAccount,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedGoals = [...goals, newGoal];
+    setGoals(updatedGoals);
+    localStorage.setItem('user_goals', JSON.stringify(updatedGoals));
+    
+    setIsGoalModalOpen(false);
+    setNewGoalName('');
+    setNewGoalTarget('');
+    setNewGoalAccount('');
+  };
+
+  const getAccountBalanceNum = (accountId) => {
+    const acc = accounts.find(a => a.id === accountId);
+    if (!acc) return 0;
+    return parseFloat(acc.balance.replace(/[^0-9.-]+/g, ""));
+  };
 
   // Available months for dropdown (sorted most recent first)
   const availableMonths = useMemo(() => {
@@ -229,6 +274,106 @@ export default function AnalyticsPage() {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Savings Goals Section */}
+      <div className={styles.goalsSection}>
+        <div className={styles.headerContainer} style={{ marginBottom: '16px' }}>
+          <h2 className={styles.sectionTitle}>Savings Goals</h2>
+        </div>
+        <div className={styles.goalsGrid}>
+          {goals.map(goal => {
+            const currentBal = getAccountBalanceNum(goal.accountId);
+            const pct = Math.min(100, (currentBal / goal.targetAmount) * 100);
+            return (
+              <div key={goal.id} className={styles.goalCard}>
+                <div className={styles.goalHeader}>
+                  <div>
+                    <h3 className={styles.goalName}>{goal.name}</h3>
+                    <p className={styles.goalTarget}>Target: ${(goal.targetAmount).toLocaleString()}</p>
+                  </div>
+                  <Target size={20} color="#00327D" />
+                </div>
+                
+                <div className={styles.goalProgressContainer}>
+                  <div className={styles.goalProgressTextRow}>
+                    <span className={styles.goalCurrentAmount}>${currentBal.toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                    <span className={styles.goalPercent}>{Math.round(pct)}%</span>
+                  </div>
+                  <div className={styles.goalProgressTrack}>
+                    <div className={styles.goalProgressBar} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                
+                <div className={styles.goalFooter}>
+                  Linked Account: {accounts.find(a => a.id === goal.accountId)?.type || 'Unknown'}
+                </div>
+              </div>
+            );
+          })}
+          
+          <div className={styles.addGoalCard} onClick={() => setIsGoalModalOpen(true)}>
+            <Plus size={32} color="#00327D" />
+            <span className={styles.addGoalText}>Create New Goal</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Goal Modal */}
+      {isGoalModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setIsGoalModalOpen(false)}>
+          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px'}}>
+              <h3 className={styles.modalTitle} style={{margin:0}}>Create Savings Goal</h3>
+              <X size={24} color="#737784" style={{cursor:'pointer'}} onClick={() => setIsGoalModalOpen(false)} />
+            </div>
+            
+            <form onSubmit={handleCreateGoal}>
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalLabel}>Goal Name</label>
+                <input 
+                  type="text" 
+                  className={styles.modalInput} 
+                  placeholder="e.g., Vacation Fund" 
+                  value={newGoalName}
+                  onChange={e => setNewGoalName(e.target.value)}
+                  required 
+                />
+              </div>
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalLabel}>Target Amount ($)</label>
+                <input 
+                  type="number" 
+                  className={styles.modalInput} 
+                  placeholder="5000" 
+                  min="1"
+                  step="0.01"
+                  value={newGoalTarget}
+                  onChange={e => setNewGoalTarget(e.target.value)}
+                  required 
+                />
+              </div>
+              <div className={styles.modalFormGroup}>
+                <label className={styles.modalLabel}>Linked Account</label>
+                <select 
+                  className={styles.modalSelect}
+                  value={newGoalAccount}
+                  onChange={e => setNewGoalAccount(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select an account to track</option>
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.balance})</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.cancelBtn} onClick={() => setIsGoalModalOpen(false)}>Cancel</button>
+                <button type="submit" className={styles.saveBtn}>Save Goal</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

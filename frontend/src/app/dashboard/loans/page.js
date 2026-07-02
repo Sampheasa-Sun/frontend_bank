@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Home, Car, User, Store, Plus, CheckCircle, Clock } from 'lucide-react';
 import styles from './loans.module.css';
+import { generateStatement } from '../../../utils/generateStatement';
 
 // Calculate due countdown from a date string like "Oct 15, 2023"
 function getDueLabel(dueDateStr) {
@@ -16,7 +17,7 @@ function getDueLabel(dueDateStr) {
 
   if (diffDays < 0) return { text: `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`, isOverdue: true, isDueSoon: true };
   if (diffDays === 0) return { text: 'Due today', isOverdue: false, isDueSoon: true };
-  if (diffDays <= 7) return { text: `Due in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, isOverdue: false, isDueSoon: true };
+  if (diffDays <= 9) return { text: `Due in ${diffDays} day${diffDays !== 1 ? 's' : ''}`, isOverdue: false, isDueSoon: true };
   return { text: `Due in ${diffDays} days`, isOverdue: false, isDueSoon: false };
 }
 
@@ -105,10 +106,13 @@ export default function LoansPage() {
     const saved = JSON.parse(localStorage.getItem('loan_approvals') || '{}');
     setApprovalStatus(saved);
 
+    const loanState = JSON.parse(localStorage.getItem('user_loans_state') || '{}');
+
     setLoans(prev => prev.map(l => {
+      let updatedLoan = { ...l };
       if (saved[l.id] === 'approved') {
-        return {
-          ...l,
+        updatedLoan = {
+          ...updatedLoan,
           status: 'ACTIVE',
           outstandingBalance: l.requestedAmount || 15000.00,
           principalAmount: l.requestedAmount || 15000.00,
@@ -122,12 +126,45 @@ export default function LoansPage() {
           }
         };
       } else if (saved[l.id] === 'rejected') {
-        return {
-          ...l,
-          status: 'REJECTED'
-        };
+        updatedLoan = { ...updatedLoan, status: 'REJECTED' };
       }
-      return l;
+
+      // Merge dynamic payments state
+      if (loanState[l.id] && updatedLoan.status === 'ACTIVE') {
+        const state = loanState[l.id];
+        const newRepaidAmount = (updatedLoan.repaidAmount || 0) + state.repaidAmount;
+        const newOutstandingBalance = Math.max(0, (updatedLoan.outstandingBalance || 0) - state.repaidAmount);
+        
+        let newProgress = 0;
+        if (updatedLoan.principalAmount) {
+          newProgress = Math.round((newRepaidAmount / updatedLoan.principalAmount) * 1000) / 10;
+        }
+
+        let newDueDate = updatedLoan.nextPayment?.dueDate;
+        if (newDueDate && state.paymentsMade > 0) {
+          const d = new Date(newDueDate);
+          d.setMonth(d.getMonth() + state.paymentsMade);
+          newDueDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        updatedLoan = {
+          ...updatedLoan,
+          outstandingBalance: newOutstandingBalance,
+          repaidAmount: newRepaidAmount,
+          repaymentProgress: newProgress > 100 ? 100 : newProgress,
+          status: newOutstandingBalance <= 0 ? 'SETTLED' : 'ACTIVE',
+          nextPayment: updatedLoan.nextPayment ? {
+            ...updatedLoan.nextPayment,
+            dueDate: newDueDate
+          } : undefined
+        };
+        
+        if (updatedLoan.status === 'SETTLED') {
+           updatedLoan.settledDate = new Date(state.lastPaymentDate || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+      }
+
+      return updatedLoan;
     }));
   }, []);
 
@@ -221,6 +258,18 @@ export default function LoansPage() {
     showSettled ? loan.status === 'SETTLED' : loan.status !== 'SETTLED'
   );
 
+  const handleDownloadStatement = (loan) => {
+    // Generate a dummy payoff statement transaction
+    const tx = [{
+      date: loan.settledDate || new Date().toLocaleDateString(),
+      merchant: 'Loan Payoff',
+      ref: `REF-${Math.floor(1000000 + Math.random() * 9000000)}`,
+      status: 'Completed',
+      amount: `$${(loan.principalAmount || 0).toLocaleString('en-US', {minimumFractionDigits:2})}`
+    }];
+    generateStatement({ name: `${loan.type} Loan`, id: loan.id }, tx, 'Loan Lifecycle');
+  };
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.headerContainer}>
@@ -311,21 +360,22 @@ export default function LoansPage() {
                           </div>
                           <span className={styles.paymentSub}>{loan.nextPayment.dueDate} • {loan.nextPayment.apr}</span>
                         </div>
-                        {dueInfo?.isDueSoon ? (
-                          <Link
-                            href={`/dashboard/transactions/transfer?toAccount=EQUINOX-001&recipient=Equinox%20Bank&amount=${loan.nextPayment.amount}&readonly=true`}
-                            className={styles.primaryBtnSmall}
-                          >
-                            Pay Now
-                          </Link>
-                        ) : (
+                        <div style={{display: 'flex', gap: '8px'}}>
                           <button className={styles.secondaryBtn} onClick={() => setManageModal(loan)}>Manage</button>
-                        )}
+                          {dueInfo?.isDueSoon && (
+                            <Link
+                              href={`/dashboard/transactions/transfer?toAccount=${loan.id}&recipient=Equinox%20Bank%20Loan%20Payment&amount=${loan.nextPayment.amount}&readonly=true`}
+                              className={styles.primaryBtnSmall}
+                            >
+                              Pay Now
+                            </Link>
+                          )}
+                        </div>
                       </>
                     ) : (
                       <>
                         <span className={styles.paymentSub}>Settled on {loan.settledDate}</span>
-                        <button className={styles.secondaryBtn}>View Statement</button>
+                        <button className={styles.secondaryBtn} onClick={() => handleDownloadStatement(loan)}>View Statement</button>
                       </>
                     )}
                   </div>
@@ -380,13 +430,15 @@ export default function LoansPage() {
               <div className={styles.manageRow}><span>APR</span><strong>{manageModal.nextPayment.apr}</strong></div>
 
               <div className={styles.manageActions}>
-                <Link
-                  href={`/dashboard/transactions/transfer?toAccount=EQUINOX-001&recipient=Equinox%20Bank&amount=${manageModal.nextPayment.amount}&readonly=true`}
-                  className={styles.primaryBtnSmall}
-                  onClick={() => setManageModal(null)}
-                >
-                  Pay Monthly Instalment
-                </Link>
+                {getDueLabel(manageModal.nextPayment.dueDate).isDueSoon && (
+                  <Link
+                    href={`/dashboard/transactions/transfer?toAccount=${manageModal.id}&recipient=Equinox%20Bank%20Loan%20Payment&amount=${manageModal.nextPayment.amount}&readonly=true`}
+                    className={styles.primaryBtnSmall}
+                    onClick={() => setManageModal(null)}
+                  >
+                    Pay Monthly Instalment
+                  </Link>
+                )}
 
                 {canPayInFull(manageModal.startDate) ? (
                   !fullPayConfirm ? (

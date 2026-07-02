@@ -363,6 +363,208 @@
   text-align: right;
 }
 
+/* ── Goals ────────────────────────────── */
+.goalsSection {
+  margin-top: 32px;
+}
+
+.goalsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.goalCard {
+  background: #FFFFFF;
+  border: 1px solid #E2E2EB;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.goalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.goalName {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #191B22;
+  margin: 0 0 4px 0;
+}
+
+.goalTarget {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #737784;
+  margin: 0;
+}
+
+.goalProgressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.goalProgressTextRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goalCurrentAmount {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #00327D;
+}
+
+.goalPercent {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #16A34A;
+}
+
+.goalProgressTrack {
+  width: 100%;
+  height: 8px;
+  background: #E2E2EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.goalProgressBar {
+  height: 100%;
+  background: #16A34A;
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+.goalFooter {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #737784;
+}
+
+.addGoalCard {
+  background: #F8F9FC;
+  border: 1px dashed #C3C6D5;
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-height: 180px;
+}
+
+.addGoalCard:hover {
+  background: #F0F4FF;
+}
+
+.addGoalText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #00327D;
+}
+
+/* Add Goal Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 32px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modalTitle {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #191B22;
+  margin: 0 0 24px 0;
+}
+
+.modalFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.modalLabel {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #191B22;
+}
+
+.modalInput, .modalSelect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #C3C6D5;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.cancelBtn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #C3C6D5;
+  border-radius: 4px;
+  color: #434653;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.saveBtn {
+  padding: 8px 16px;
+  background: #00327D;
+  border: none;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 /* ── Responsive ───────────────────────── */
 @media (max-width: 900px) {
   .topRow {

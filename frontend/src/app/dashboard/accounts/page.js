@@ -11,7 +11,6 @@ const defaultAccounts = [
     name: 'Premier Checking',
     mask: '**** 8492',
     balance: '$45,230.00',
-    equivalent: '≈ 185,443,000 KHR',
     status: 'Active',
     icon: 'checking'
   },
@@ -21,7 +20,6 @@ const defaultAccounts = [
     name: 'High-Yield Savings',
     mask: '**** 1104',
     balance: '$128,500.50',
-    equivalent: '≈ 526,852,050 KHR',
     status: 'Active',
     bgColor: '#FDECE4',
     iconColor: '#C44100',
@@ -33,7 +31,6 @@ const defaultAccounts = [
     name: '12-Month Fixed Deposit',
     mask: '**** 9921',
     balance: '$50,000.00',
-    equivalent: '≈ 205,000,000 KHR',
     status: 'Active',
     maturity: 'Maturity: Oct 14, 2024',
     bgColor: '#E7E7F0',
@@ -73,8 +70,44 @@ export default function MyAccounts() {
 
   useEffect(() => {
     let saved = JSON.parse(localStorage.getItem('user_accounts') || 'null');
-    if (!saved) {
+    let cards = JSON.parse(localStorage.getItem('user_cards') || '[]');
+    let defaultCardsList = cards.length > 0 ? cards : [{last4: '4821'}, {last4: '9901'}];
+    let needsSave = false;
+
+    if (!saved || saved.length === 0) {
       saved = defaultAccounts;
+      needsSave = true;
+    }
+    
+    // Migration: fix masks and account numbers
+    saved = saved.map(acc => {
+      let updatedAcc = { ...acc };
+      
+      // Add missing account number
+      if (!updatedAcc.accountNumber) {
+        needsSave = true;
+        updatedAcc.accountNumber = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+      }
+
+      if (updatedAcc.type.toLowerCase().includes('loan') || updatedAcc.type.toLowerCase().includes('fixed')) {
+        if (updatedAcc.mask) {
+          needsSave = true;
+          updatedAcc.mask = '';
+        }
+      } else {
+        // If the mask doesn't match any card, change it to match a card
+        const currentLast4 = updatedAcc.mask ? updatedAcc.mask.replace('**** ', '') : '';
+        const isValidCard = defaultCardsList.some(c => c.last4 === currentLast4);
+        if (!isValidCard) {
+          needsSave = true;
+          const randomCard = defaultCardsList[Math.floor(Math.random() * defaultCardsList.length)];
+          updatedAcc.mask = `**** ${randomCard.last4}`;
+        }
+      }
+      return updatedAcc;
+    });
+
+    if (needsSave) {
       localStorage.setItem('user_accounts', JSON.stringify(saved));
     }
     setAccounts(saved);
@@ -109,7 +142,7 @@ export default function MyAccounts() {
                 </div>
                 <div className={styles.cardTitleText}>
                   <span className={styles.cardTitle}>{acc.name}</span>
-                  <span className={styles.cardMask}>{acc.mask}</span>
+                  {acc.mask && <span className={styles.cardMask}>{acc.mask}</span>}
                 </div>
               </div>
               <div className={styles.activeBadge}>
@@ -126,7 +159,6 @@ export default function MyAccounts() {
                 <span className={styles.balanceValue}>{acc.balance}</span>
                 <span className={styles.balanceCurrency}>USD</span>
               </div>
-              <span className={styles.balanceEquivalent}>{acc.equivalent}</span>
             </div>
 
             <div className={styles.cardBottom}>
