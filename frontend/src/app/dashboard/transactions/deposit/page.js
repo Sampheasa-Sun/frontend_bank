@@ -2,158 +2,171 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle, ChevronDown, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import styles from './deposit.module.css';
-import { generateReceipt } from '../../../../utils/generateReceipt';
 
-export default function CashDeposit() {
+export default function DepositPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState('0');
   const [isSuccess, setIsSuccess] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
   useEffect(() => {
-    const storedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
-    setAccounts(storedAccounts.filter(a => !a.type.toLowerCase().includes('fixed') && !a.type.toLowerCase().includes('loan')));
-    if (storedAccounts.length > 0) {
-      setSelectedAccount(storedAccounts[0].id);
+    let saved = JSON.parse(localStorage.getItem('user_accounts') || 'null');
+    if (!saved || saved.length === 0) {
+      saved = [{ id: 'checking-1', name: 'Premier Checking', balance: '$24,500.00', mask: '**** 1234', type: 'Checking' }];
+    }
+    const eligible = saved.filter(a => !a.type.toLowerCase().includes('fixed') && !a.type.toLowerCase().includes('loan'));
+    setAccounts(eligible);
+    if (eligible.length > 0) {
+      setSelectedAccount(eligible[0].id);
     }
   }, []);
 
-  const handleDeposit = (e) => {
-    e.preventDefault();
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) return;
+  const handleKeyPress = (key) => {
+    if (isSuccess) return;
+    if (key === 'CLEAR') {
+      setAmount('0');
+    } else {
+      if (amount === '0') {
+        setAmount(key);
+      } else if (amount.length < 8) { // max 8 digits
+        setAmount(amount + key);
+      }
+    }
+  };
+
+  const handleQuickCash = (val) => {
+    if (isSuccess) return;
+    setAmount(val.toString());
+  };
+
+  const handleConfirm = () => {
+    if (isSuccess || amount === '0') return;
 
     const depositAmount = parseFloat(amount);
+    
+    // Process deposit
     const storedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
     const accIndex = storedAccounts.findIndex(a => a.id === selectedAccount);
     
     if (accIndex !== -1) {
-      const currentBalance = parseFloat(storedAccounts[accIndex].balance.replace(/[^0-9.-]+/g, ""));
+      const currentBalanceStr = storedAccounts[accIndex].balance.replace(/[^0-9.-]+/g,"");
+      const currentBalance = parseFloat(currentBalanceStr);
       const newBalance = currentBalance + depositAmount;
+      
       storedAccounts[accIndex].balance = `$${newBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       localStorage.setItem('user_accounts', JSON.stringify(storedAccounts));
 
-      // Log transaction
+      // Record transaction
       const storedTxs = JSON.parse(localStorage.getItem('user_transactions') || '[]');
-      const refNumber = `TRX-${Math.floor(10000 + Math.random() * 90000)}-CASH`;
       const newTx = {
-        id: refNumber,
+        id: `TRX-${Math.floor(10000000 + Math.random() * 90000000)}`,
         merchant: 'Cash Deposit',
         category: 'Deposit',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        ref: refNumber,
+        ref: `DEP-${Math.floor(10000000 + Math.random() * 90000000)}`,
         status: 'Cleared',
-        amount: `+$${depositAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+        amount: `+$${depositAmount.toFixed(2)}`,
         type: 'positive',
         iconType: 'transfer',
-        fromAccount: 'Physical Branch',
-        description: 'Cash deposit at branch'
+        fromAccount: 'Physical Branch/ATM',
+        description: 'Cash deposit at ATM'
       };
       localStorage.setItem('user_transactions', JSON.stringify([newTx, ...storedTxs]));
 
       setReceiptData({
-        newBalance: storedAccounts[accIndex].balance,
-        ref: refNumber
+        amount: depositAmount.toFixed(2),
+        account: storedAccounts[accIndex].name,
+        date: newTx.date,
+        time: newTx.time,
+        ref: newTx.ref
       });
       setIsSuccess(true);
     }
   };
 
+  const handleCancel = () => {
+    router.push('/dashboard/transactions');
+  };
+
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.centerColumn}>
-        <div className={styles.headerSection}>
-          <h2 className={styles.pageTitle}>Cash Deposit</h2>
-          <p className={styles.pageSubtitle}>Securely record incoming cash transactions to designated accounts.</p>
+      <div className={styles.atmMachine}>
+        <div className={styles.atmHeader}>EQUINOX ATM NETWORK</div>
+        
+        <div className={styles.atmScreen}>
+          {isSuccess ? (
+            <div className={styles.successOverlay}>
+              <div className={styles.successText}>
+                DEPOSIT SUCCESSFUL<br/><br/>
+                ${receiptData.amount}<br/>
+                ADDED TO {receiptData.account.toUpperCase()}<br/><br/>
+                REF: {receiptData.ref}
+              </div>
+              <button className={styles.receiptBtn} onClick={handleCancel}>
+                RETURN TO MENU (TAKE RECEIPT)
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className={styles.screenTitle}>CASH DEPOSIT</div>
+              
+              <div className={styles.screenContent}>
+                <select 
+                  className={styles.accountSelect}
+                  value={selectedAccount}
+                  onChange={(e) => setSelectedAccount(e.target.value)}
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.mask})
+                    </option>
+                  ))}
+                </select>
+
+                <div className={styles.amountDisplay}>
+                  <span>$</span> {amount}
+                </div>
+              </div>
+
+              <div className={styles.screenFooter}>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+                  <div className={`${styles.screenBtn} ${styles.left}`} onClick={() => handleQuickCash(100)} style={{cursor: 'pointer'}}> $100</div>
+                  <div className={`${styles.screenBtn} ${styles.left}`} onClick={() => handleQuickCash(500)} style={{cursor: 'pointer'}}> $500</div>
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end'}}>
+                  <div className={`${styles.screenBtn} ${styles.right}`} onClick={() => handleQuickCash(1000)} style={{cursor: 'pointer'}}>$1000 </div>
+                  <div className={`${styles.screenBtn} ${styles.right}`} onClick={() => handleQuickCash(2000)} style={{cursor: 'pointer'}}>$2000 </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {!isSuccess ? (
-          <div className={styles.depositCard}>
-            <form onSubmit={handleDeposit}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>To Account</label>
-                <div className={styles.selectWrapper}>
-                  <select 
-                    className={styles.selectInput}
-                    value={selectedAccount}
-                    onChange={(e) => setSelectedAccount(e.target.value)}
-                    required
-                  >
-                    {accounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name} {acc.mask || ''} ({acc.balance})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className={styles.selectIcon} size={20} />
-                </div>
+        <div className={styles.hardwarePanel}>
+          <div className={styles.keypad}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <div key={num} className={styles.keyBtn} onClick={() => handleKeyPress(num.toString())}>
+                {num}
               </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Deposit Amount</label>
-                <div className={styles.amountGroup}>
-                  <span className={styles.currencyPrefix}>$</span>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    className={styles.amountInput}
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                  />
-                  <div className={styles.currencySuffix}>USD</div>
-                </div>
-              </div>
-
-              <div className={styles.actionsRow}>
-                <Link href="/dashboard/transactions" className={styles.cancelLink}>Cancel</Link>
-                <button type="submit" className={styles.confirmBtn}>
-                  Confirm Deposit <ArrowRight size={16} />
-                </button>
-              </div>
-            </form>
+            ))}
+            <div className={styles.keyBtn} onClick={() => handleKeyPress('0')}>0</div>
+            <div className={styles.keyBtn} onClick={() => handleKeyPress('CLEAR')}>CLR</div>
           </div>
-        ) : (
-          <div className={styles.successPanel}>
-            <div className={styles.successHeader}>
-              <CheckCircle className={styles.successIcon} size={28} />
-              <div>
-                <h3 className={styles.successTitle}>Deposit Successful</h3>
-                <p className={styles.successSubtitle}>Funds have been securely credited to the account.</p>
-              </div>
-            </div>
-
-            <div className={styles.successDetailsCard}>
-              <div className={`${styles.detailRow} ${styles.detailRowBordered}`}>
-                <span className={styles.detailLabel}>New Available Balance</span>
-                <span className={styles.detailValue}>{receiptData?.newBalance} USD</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Reference Number</span>
-                <span className={styles.detailValueRef}>{receiptData?.ref}</span>
-              </div>
-            </div>
-
-            <button 
-              className={styles.receiptBtn} 
-              onClick={() => {
-                generateReceipt('Cash Deposit', {
-                  'New Available Balance': receiptData?.newBalance + ' USD',
-                  'Reference Number': receiptData?.ref,
-                  'Account': accounts.find(a => a.id === selectedAccount)?.name || 'Account'
-                });
-              }}
-            >
-              <Download size={16} />
-              Download Receipt
+          
+          <div className={styles.actionPad}>
+            <button className={`${styles.actionBtn} ${styles.btnCancel}`} onClick={handleCancel}>
+              CANCEL
+            </button>
+            <button className={`${styles.actionBtn} ${styles.btnConfirm}`} onClick={handleConfirm}>
+              CONFIRM
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

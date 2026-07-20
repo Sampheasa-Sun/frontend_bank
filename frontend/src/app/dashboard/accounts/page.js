@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './accounts.module.css';
+import { generateStatement } from '../../../utils/generateStatement';
+import { MOCK_TRANSACTIONS, generateTransactions } from '../transactions/mockData';
 
 const defaultAccounts = [
   {
@@ -113,6 +115,24 @@ export default function MyAccounts() {
     setAccounts(saved);
   }, []);
 
+  const handleDownloadClick = (e, acc) => {
+    e.preventDefault(); // prevent the <Link> from navigating
+    
+    const stored = JSON.parse(localStorage.getItem('user_transactions') || '[]');
+    const isNewAccount = acc.id.startsWith('loan-') || acc.id.startsWith('new-') || acc.id.startsWith('acc-') || acc.isCustom;
+    
+    let accTransactions = [];
+    if (isNewAccount) {
+      accTransactions = stored.filter(t => t.fromAccount === acc.name);
+    } else {
+      const generated = generateTransactions(100);
+      const all = [...stored, ...MOCK_TRANSACTIONS, ...generated];
+      accTransactions = all.filter(t => !t.fromAccount || t.fromAccount === acc.name);
+    }
+    
+    generateStatement(acc, accTransactions, 'All Time');
+  };
+
   return (
     <div className={styles.pageContainer}>
       
@@ -166,7 +186,7 @@ export default function MyAccounts() {
                 {acc.maturity && <span className={styles.maturityText}>| {acc.maturity}</span>}
               </div>
               <div className={styles.cardActions}>
-                <div className={styles.actionIconLink}>
+                <div className={styles.actionIconLink} onClick={(e) => handleDownloadClick(e, acc)}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>

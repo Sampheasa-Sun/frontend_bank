@@ -5,36 +5,42 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import styles from './cards.module.css';
 
-const DEFAULT_CARDS = [
-  {
-    id: 'debit-1',
-    label: 'PRIMARY CHECKING',
-    type: 'Visa Debit',
-    last4: '4821',
-    cardholder: 'ALEX ANDERSON',
-    expires: '09/27',
-    network: 'VISA',
-    theme: 'cardBlue'
-  },
-  {
-    id: 'credit-1',
-    label: 'EQUINOX PLATINUM',
-    type: 'Infinite Visa',
-    last4: '9901',
-    cardholder: 'ALEX ANDERSON',
-    expires: '12/28',
-    network: 'VISA',
-    theme: 'cardDark'
-  }
-];
-
 export default function CardsPage() {
   const [cards, setCards] = useState([]);
 
   useEffect(() => {
     let saved = JSON.parse(localStorage.getItem('user_cards') || 'null');
     if (!saved || saved.length === 0) {
-      saved = DEFAULT_CARDS;
+      const savedProfile = JSON.parse(localStorage.getItem('user_profile') || 'null');
+      const cardName = savedProfile ? savedProfile.name.toUpperCase() : 'ALEX ANDERSON';
+      saved = [
+        {
+          id: 'debit-1',
+          label: 'PRIMARY CHECKING',
+          type: 'Visa Debit',
+          last4: '4821',
+          cardholder: cardName,
+          expires: '09/27',
+          network: 'VISA',
+          theme: 'cardBlue',
+          linkedAccount: 'Primary Checking',
+          issuedDate: 'Oct 2023',
+          status: 'Active'
+        },
+        {
+          id: 'credit-1',
+          label: 'EQUINOX PLATINUM',
+          type: 'Infinite Visa',
+          last4: '9901',
+          cardholder: cardName,
+          expires: '12/28',
+          network: 'VISA',
+          theme: 'cardDark',
+          linkedAccount: 'Credit Line',
+          issuedDate: 'Dec 2023',
+          status: 'Active'
+        }
+      ];
       localStorage.setItem('user_cards', JSON.stringify(saved));
     }
     setCards(saved);

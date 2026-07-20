@@ -3,51 +3,69 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, AlertCircle, Info, Banknote, CheckCircle, X, Download } from 'lucide-react';
 import styles from './withdraw.module.css';
-import { generateReceipt } from '../../../../utils/generateReceipt';
 
-export default function CashWithdrawal() {
+export default function WithdrawPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState('0');
   const [error, setError] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
-  // Dummy daily limit logic matching Figma
-  const dailyLimit = 10000;
-
   useEffect(() => {
-    const storedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
-    setAccounts(storedAccounts.filter(a => !a.type.toLowerCase().includes('fixed') && !a.type.toLowerCase().includes('loan')));
-    if (storedAccounts.length > 0) {
-      setSelectedAccount(storedAccounts[0].id);
+    let saved = JSON.parse(localStorage.getItem('user_accounts') || 'null');
+    if (!saved || saved.length === 0) {
+      saved = [{ id: 'checking-1', name: 'Premier Checking', balance: '$24,500.00', mask: '**** 1234', type: 'Checking' }];
+    }
+    const eligible = saved.filter(a => !a.type.toLowerCase().includes('fixed') && !a.type.toLowerCase().includes('loan'));
+    setAccounts(eligible);
+    if (eligible.length > 0) {
+      setSelectedAccount(eligible[0].id);
     }
   }, []);
 
-  const handleWithdraw = (e) => {
-    e.preventDefault();
+  const handleKeyPress = (key) => {
+    if (isSuccess) return;
     setError('');
+    if (key === 'CLEAR') {
+      setAmount('0');
+    } else {
+      if (amount === '0') {
+        setAmount(key);
+      } else if (amount.length < 8) { // max 8 digits
+        setAmount(amount + key);
+      }
+    }
+  };
 
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) return;
+  const handleQuickCash = (val) => {
+    if (isSuccess) return;
+    setError('');
+    setAmount(val.toString());
+  };
+
+  const handleConfirm = () => {
+    if (isSuccess || amount === '0') return;
 
     const withdrawAmount = parseFloat(amount);
     
-    if (withdrawAmount > dailyLimit) {
-      setError(`Amount exceeds daily withdrawal limit of $${dailyLimit.toLocaleString()}.`);
+    if (withdrawAmount > 10000) {
+      setError('MAX LIMIT $10,000');
       return;
     }
 
+    // Process withdrawal
     const storedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
     const accIndex = storedAccounts.findIndex(a => a.id === selectedAccount);
     
     if (accIndex !== -1) {
-      const currentBalance = parseFloat(storedAccounts[accIndex].balance.replace(/[^0-9.-]+/g, ""));
+      const currentBalanceStr = storedAccounts[accIndex].balance.replace(/[^0-9.-]+/g,"");
+      const currentBalance = parseFloat(currentBalanceStr);
       
-      if (withdrawAmount > currentBalance) {
-        setError('Insufficient funds in the selected account.');
+      if (currentBalance < withdrawAmount) {
+        setError('INSUFFICIENT FUNDS');
         return;
       }
 
@@ -55,164 +73,115 @@ export default function CashWithdrawal() {
       storedAccounts[accIndex].balance = `$${newBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       localStorage.setItem('user_accounts', JSON.stringify(storedAccounts));
 
-      // Log transaction
+      // Record transaction
       const storedTxs = JSON.parse(localStorage.getItem('user_transactions') || '[]');
-      const refNumber = `TRX-${Math.floor(10000 + Math.random() * 90000)}-WD`;
       const newTx = {
-        id: refNumber,
+        id: `TRX-${Math.floor(10000000 + Math.random() * 90000000)}`,
         merchant: 'Cash Withdrawal',
         category: 'Withdrawal',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        ref: refNumber,
+        ref: `WDL-${Math.floor(10000000 + Math.random() * 90000000)}`,
         status: 'Cleared',
-        amount: `-$${withdrawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+        amount: `-$${withdrawAmount.toFixed(2)}`,
         type: 'negative',
         iconType: 'transfer',
         fromAccount: storedAccounts[accIndex].name,
-        description: 'Cash withdrawal at branch/ATM'
+        description: 'Cash withdrawal at ATM'
       };
       localStorage.setItem('user_transactions', JSON.stringify([newTx, ...storedTxs]));
 
       setReceiptData({
-        amount: withdrawAmount,
-        ref: refNumber,
-        newBalance: storedAccounts[accIndex].balance
+        amount: withdrawAmount.toFixed(2),
+        account: storedAccounts[accIndex].name,
+        date: newTx.date,
+        time: newTx.time,
+        ref: newTx.ref
       });
-      setShowSuccessModal(true);
+      setIsSuccess(true);
     }
   };
 
-  const getSelectedAccountBalance = () => {
-    const acc = accounts.find(a => a.id === selectedAccount);
-    return acc ? acc.balance : '$0.00';
+  const handleCancel = () => {
+    router.push('/dashboard/transactions');
   };
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.withdrawCard}>
-        <div className={styles.cardHeader}>
-          <div className={styles.headerText}>
-            <h2 className={styles.cardTitle}>Cash Withdrawal</h2>
-            <p className={styles.cardSubtitle}>Initiate a secure cash transfer from your accounts.</p>
-          </div>
-          <div className={styles.headerIconBox}>
-            <Banknote size={24} />
-          </div>
+      <div className={styles.atmMachine}>
+        <div className={styles.atmHeader}>EQUINOX ATM NETWORK</div>
+        
+        <div className={styles.atmScreen}>
+          {isSuccess ? (
+            <div className={styles.successOverlay}>
+              <div className={styles.successText}>
+                PLEASE TAKE YOUR CASH<br/><br/>
+                ${receiptData.amount}<br/>
+                DISPENSED FROM {receiptData.account.toUpperCase()}<br/><br/>
+                REF: {receiptData.ref}
+              </div>
+              <button className={styles.receiptBtn} onClick={handleCancel}>
+                RETURN TO MENU (TAKE RECEIPT)
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className={styles.screenTitle}>CASH WITHDRAWAL</div>
+              
+              <div className={styles.screenContent}>
+                <select 
+                  className={styles.accountSelect}
+                  value={selectedAccount}
+                  onChange={(e) => setSelectedAccount(e.target.value)}
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.mask}) - {acc.balance}
+                    </option>
+                  ))}
+                </select>
+
+                <div className={styles.amountDisplay}>
+                  <span>$</span> {amount}
+                </div>
+                {error && <div className={styles.errorText}>{error}</div>}
+              </div>
+
+              <div className={styles.screenFooter}>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
+                  <div className={`${styles.screenBtn} ${styles.left}`} onClick={() => handleQuickCash(20)} style={{cursor: 'pointer'}}> $20</div>
+                  <div className={`${styles.screenBtn} ${styles.left}`} onClick={() => handleQuickCash(60)} style={{cursor: 'pointer'}}> $60</div>
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end'}}>
+                  <div className={`${styles.screenBtn} ${styles.right}`} onClick={() => handleQuickCash(100)} style={{cursor: 'pointer'}}>$100 </div>
+                  <div className={`${styles.screenBtn} ${styles.right}`} onClick={() => handleQuickCash(200)} style={{cursor: 'pointer'}}>$200 </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        <form onSubmit={handleWithdraw}>
-          <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-            <label className={styles.formLabel}>From Account</label>
-            <div className={styles.selectWrapper}>
-              <select 
-                className={styles.selectInput}
-                value={selectedAccount}
-                onChange={(e) => {
-                  setSelectedAccount(e.target.value);
-                  setError('');
-                }}
-                required
-              >
-                {accounts.map(acc => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} {acc.mask || ''} ({acc.balance})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className={styles.selectIcon} size={20} />
-            </div>
-            <span className={styles.balanceNotice}>
-              <Info size={12} /> Available Balance: {getSelectedAccountBalance()}
-            </span>
+        <div className={styles.hardwarePanel}>
+          <div className={styles.keypad}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <div key={num} className={styles.keyBtn} onClick={() => handleKeyPress(num.toString())}>
+                {num}
+              </div>
+            ))}
+            <div className={styles.keyBtn} onClick={() => handleKeyPress('0')}>0</div>
+            <div className={styles.keyBtn} onClick={() => handleKeyPress('CLEAR')}>CLR</div>
           </div>
-
-          <div className={styles.formGroup} style={{ marginBottom: '24px' }}>
-            <div className={styles.labelRow}>
-              <label className={styles.formLabel}>Withdrawal Amount</label>
-              <span className={styles.formLabelSub}>Max: ${dailyLimit.toLocaleString()}/day</span>
-            </div>
-            <div className={`${styles.amountGroup} ${error ? styles.amountGroupError : ''}`}>
-              <div className={styles.currencyPrefix}>USD</div>
-              <input 
-                type="number"
-                step="0.01"
-                min="0.01"
-                className={styles.amountInput}
-                placeholder="1500"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  if (error) setError('');
-                }}
-                required
-              />
-              {error && <AlertCircle className={styles.errorIcon} size={20} />}
-            </div>
-            {error && <span className={styles.errorText}>{error}</span>}
-          </div>
-
-          <div className={styles.actionsRow}>
-            <Link href="/dashboard/transactions" className={styles.cancelLink}>Cancel</Link>
-            <button type="submit" className={styles.confirmBtn}>
-              Confirm Withdrawal
+          
+          <div className={styles.actionPad}>
+            <button className={`${styles.actionBtn} ${styles.btnCancel}`} onClick={handleCancel}>
+              CANCEL
+            </button>
+            <button className={`${styles.actionBtn} ${styles.btnConfirm}`} onClick={handleConfirm}>
+              CONFIRM
             </button>
           </div>
-        </form>
-      </div>
-
-      {showSuccessModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.successModal}>
-            <div className={styles.modalHeader}>
-              <div className={styles.modalIconBox}>
-                <CheckCircle size={24} />
-              </div>
-              <button className={styles.closeBtn} onClick={() => router.push('/dashboard/transactions')}>
-                <X size={20} />
-              </button>
-            </div>
-            
-            <h3 className={styles.modalTitle}>Withdrawal Successful</h3>
-            <p className={styles.modalSubtitle}>Funds have been successfully withdrawn from your account.</p>
-            
-            <div className={styles.modalDetails}>
-              <div className={styles.modalDetailRow}>
-                <span className={styles.modalDetailLabel}>Amount Withdrawn</span>
-                <span className={styles.modalDetailValue}>${receiptData?.amount?.toLocaleString('en-US', {minimumFractionDigits: 2})} USD</span>
-              </div>
-              <div className={styles.modalDetailRow}>
-                <span className={styles.modalDetailLabel}>New Balance</span>
-                <span className={styles.modalDetailValue}>{receiptData?.newBalance}</span>
-              </div>
-              <div className={styles.modalDetailRow} style={{borderBottom: 'none'}}>
-                <span className={styles.modalDetailLabel}>Ref Number</span>
-                <span className={styles.modalDetailValueRef}>{receiptData?.ref}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-              <button 
-                className={styles.modalReceiptBtn} 
-                onClick={() => {
-                  generateReceipt('Cash Withdrawal', {
-                    'Amount Withdrawn': '$' + receiptData?.amount?.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' USD',
-                    'New Balance': receiptData?.newBalance,
-                    'Reference Number': receiptData?.ref,
-                    'Account': accounts.find(a => a.id === selectedAccount)?.name || 'Account'
-                  });
-                }}
-              >
-                <Download size={16} />
-                Receipt
-              </button>
-              <button className={styles.modalActionBtn} onClick={() => router.push('/dashboard/transactions')}>
-                Back to Transactions
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

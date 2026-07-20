@@ -7,9 +7,7 @@
 
 .headerContainer {
   margin-bottom: 32px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  display: block;
 }
 
 .backLink {
@@ -310,4 +308,22 @@
   font-size: 16px;
   color: #FFFFFF;
   cursor: pointer;
+}
+
+.addBtn {
+  background: #0047AB;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #FFFFFF;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.addBtn:hover {
+  background: #00327D;
 }

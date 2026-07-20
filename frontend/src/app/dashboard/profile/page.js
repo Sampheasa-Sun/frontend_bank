@@ -16,9 +16,27 @@ function getScoreStatus(score) {
 export default function ProfilePage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [name, setName] = useState('Alex Anderson');
   const [email, setEmail] = useState('a.anderson@example.com');
+  const [phone, setPhone] = useState('+1 (555) 019-2834');
   const [address, setAddress] = useState('400 Broad Street\nApt 12B\nSeattle, WA 98109\nUnited States');
   
+  React.useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('user_profile') || 'null');
+    if (saved) {
+      setName(saved.name || 'Alex Anderson');
+      setEmail(saved.email || 'a.anderson@example.com');
+      setPhone(saved.phone || '+1 (555) 019-2834');
+      setAddress(saved.address || '400 Broad Street\nApt 12B\nSeattle, WA 98109\nUnited States');
+    }
+  }, []);
+
+  const handleSaveContact = () => {
+    const profile = { name, email, phone, address };
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    setShowContactModal(false);
+  };
+
   const score = 824;
   const scoreStatus = getScoreStatus(score);
   return (
@@ -39,7 +57,7 @@ export default function ProfilePage() {
           
           <div className={styles.userInfo}>
             <div className={styles.userName}>
-              Alex Anderson
+              {name}
               <span className={styles.kycBadge}>
                 <Shield size={12} />
                 KYC Verified
@@ -75,7 +93,7 @@ export default function ProfilePage() {
               <Smartphone className={styles.infoIcon} size={20} />
               <div className={styles.infoContent}>
                 <span className={styles.infoLabel}>Mobile Phone</span>
-                <span className={styles.infoValue}>+1 (555) 019-2834</span>
+                <span className={styles.infoValue}>{phone}</span>
               </div>
             </div>
 
@@ -163,8 +181,13 @@ export default function ProfilePage() {
             
             <div className={styles.modalBody}>
               <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>Mobile Phone (Cannot be changed)</label>
-                <input type="text" value="+1 (555) 019-2834" disabled className={styles.textInput} style={{ opacity: 0.7, cursor: 'not-allowed' }} />
+                <label className={styles.inputLabel}>Full Name</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={styles.textInput} />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel}>Mobile Phone</label>
+                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={styles.textInput} />
               </div>
 
               <div className={styles.inputGroup}>
@@ -185,9 +208,7 @@ export default function ProfilePage() {
 
               <button 
                 className={styles.submitBtn} 
-                onClick={() => {
-                  setShowContactModal(false);
-                }}
+                onClick={handleSaveContact}
               >
                 <RefreshCw size={16} />
                 Save Changes

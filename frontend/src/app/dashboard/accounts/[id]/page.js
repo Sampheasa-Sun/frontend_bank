@@ -60,9 +60,9 @@ export default function AccountDetails() {
       localStorage.setItem('user_transactions', JSON.stringify(stored));
     }
 
-    // Only load general mock transactions for pre-existing accounts, not newly created ones
-    const isNewAccount = params.id.startsWith('loan-') || params.id.startsWith('new-');
     const accObj = saved.find(a => a.id === params.id);
+    // Only load general mock transactions for pre-existing accounts, not newly created ones
+    const isNewAccount = params.id.startsWith('loan-') || params.id.startsWith('new-') || params.id.startsWith('acc-') || (accObj && accObj.isCustom);
     
     if (isNewAccount) {
       // New accounts only show their specific transactions (like loan funding or transfers)
@@ -124,7 +124,7 @@ export default function AccountDetails() {
           const storedTrx = JSON.parse(localStorage.getItem('user_transactions') || '[]');
           const newTrx = {
             id: `TRX-${Math.floor(10000000 + Math.random() * 90000000)}`,
-            merchant: `Transfer from Closed Account`,
+            merchant: `Transfer from ${accountToDelete.name}`,
             category: 'Transfer',
             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -133,7 +133,7 @@ export default function AccountDetails() {
             amount: `+$${balanceToTransfer.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
             type: 'positive',
             iconType: 'transfer',
-            fromAccount: accountToDelete.name,
+            fromAccount: fallbackAccount.name,
             description: `Balance transfer from closed ${accountToDelete.type} account`
           };
           localStorage.setItem('user_transactions', JSON.stringify([newTrx, ...storedTrx]));

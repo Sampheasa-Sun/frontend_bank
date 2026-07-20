@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Utensils, Plane, ShoppingBag, Car, ArrowLeft } from 'lucide-react';
@@ -30,7 +30,7 @@ const generateTransactions = (count, cardId) => {
   return result;
 };
 
-export default function CardTransactionsPage() {
+function CardTransactionsPageContent() {
   const searchParams = useSearchParams();
   const initialCardId = searchParams.get('id') || 'credit-1';
   
@@ -218,5 +218,13 @@ export default function CardTransactionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CardTransactionsPage() {
+  return (
+    <Suspense fallback={<div>Loading card transactions...</div>}>
+      <CardTransactionsPageContent />
+    </Suspense>
   );
 }

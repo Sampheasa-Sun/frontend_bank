@@ -13,6 +13,10 @@ export default function RequestCardPage() {
   const [cardType, setCardType] = useState('debit');
   const [linkedAccount, setLinkedAccount] = useState('');
   const [accounts, setAccounts] = useState([]);
+  const [profile, setProfile] = useState({
+    name: 'Alex Anderson',
+    address: '400 Broad Street\nApt 12B\nSeattle, WA 98109\nUnited States'
+  });
   
   // modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,6 +38,11 @@ export default function RequestCardPage() {
     if (saved.length > 0) {
       setLinkedAccount(saved[0].name);
     }
+    
+    const savedProfile = JSON.parse(localStorage.getItem('user_profile') || 'null');
+    if (savedProfile) {
+      setProfile(savedProfile);
+    }
   }, []);
 
   const selectedAccInfo = accounts.find(a => a.name === linkedAccount);
@@ -47,10 +56,13 @@ export default function RequestCardPage() {
       label: selectedAccInfo ? selectedAccInfo.name.toUpperCase() : 'NEW ACCOUNT',
       type: cardType === 'debit' ? 'Visa Debit' : 'Credit Card',
       last4: Math.floor(1000 + Math.random() * 9000).toString(),
-      cardholder: 'ALEX ANDERSON',
+      cardholder: profile.name.toUpperCase(),
       expires: '12/28',
       network: network === 'visa' ? 'VISA' : 'MASTERCARD',
-      theme: cardType === 'debit' ? 'cardBlue' : 'cardDark'
+      theme: cardType === 'debit' ? 'cardBlue' : 'cardDark',
+      linkedAccount: selectedAccInfo ? selectedAccInfo.name : 'Checking',
+      issuedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      status: 'Active'
     };
 
     // Save to localStorage
@@ -62,20 +74,26 @@ export default function RequestCardPage() {
           label: 'PRIMARY CHECKING',
           type: 'Visa Debit',
           last4: '4821',
-          cardholder: 'ALEX ANDERSON',
+          cardholder: profile.name.toUpperCase(),
           expires: '09/27',
           network: 'VISA',
-          theme: 'cardBlue'
+          theme: 'cardBlue',
+          linkedAccount: 'Primary Checking',
+          issuedDate: 'Oct 2023',
+          status: 'Active'
         },
         {
           id: 'credit-1',
           label: 'EQUINOX PLATINUM',
           type: 'Infinite Visa',
           last4: '9901',
-          cardholder: 'ALEX ANDERSON',
+          cardholder: profile.name.toUpperCase(),
           expires: '12/28',
           network: 'VISA',
-          theme: 'cardDark'
+          theme: 'cardDark',
+          linkedAccount: 'Credit Line',
+          issuedDate: 'Dec 2023',
+          status: 'Active'
         }
       ];
     }
@@ -208,15 +226,15 @@ export default function RequestCardPage() {
             <div className={styles.inputGroup}>
               <div className={styles.labelRow}>
                 <label className={styles.inputLabel}>Delivery Address</label>
-                <a href="#" className={styles.editLink}>Edit Profile</a>
+                <Link href="/dashboard/profile" className={styles.editLink}>Edit Profile</Link>
               </div>
               <div className={styles.addressBox}>
                 <MapPin size={20} color="#434653" style={{marginTop: 2}} />
                 <div className={styles.addressText}>
-                  <span className={styles.addressName}>Eleanor Shellstrop</span>
-                  <span>1234 Good Place Ave, Apt 4B</span>
-                  <span>New York, NY 10001</span>
-                  <span>United States</span>
+                  <span className={styles.addressName}>{profile.name}</span>
+                  {profile.address.split('\n').map((line, idx) => (
+                    <span key={idx}>{line}</span>
+                  ))}
                 </div>
               </div>
               <span className={styles.noteText}>

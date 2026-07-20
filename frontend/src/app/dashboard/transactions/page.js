@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './transactions.module.css';
 import { MOCK_TRANSACTIONS, generateTransactions } from './mockData';
 
-export default function Transactions() {
+function TransactionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [transactions, setTransactions] = useState([]);
@@ -289,5 +289,13 @@ export default function Transactions() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Transactions() {
+  return (
+    <Suspense fallback={<div>Loading transactions...</div>}>
+      <TransactionsContent />
+    </Suspense>
   );
 }

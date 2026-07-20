@@ -49,6 +49,14 @@ export default function BillsPage() {
   const [accounts, setAccounts] = useState([]);
   const [selectedBill, setSelectedBill] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newBill, setNewBill] = useState({
+    biller: '',
+    type: 'Subscription',
+    amount: '',
+    dueDate: '',
+    icon: 'monitor'
+  });
 
   useEffect(() => {
     // Load bills
@@ -61,7 +69,6 @@ export default function BillsPage() {
 
     // Load accounts
     const savedAccounts = JSON.parse(localStorage.getItem('user_accounts') || '[]');
-    setAccounts(savedAccounts);
     if (savedAccounts.length > 0) {
       setSelectedAccount(savedAccounts[0].id);
     }
@@ -138,6 +145,27 @@ export default function BillsPage() {
     setSelectedBill(null);
   };
 
+  const handleAddBill = (e) => {
+    e.preventDefault();
+    if (!newBill.biller || !newBill.amount || !newBill.dueDate) return;
+
+    const added = {
+      id: `BILL-${Math.floor(1000 + Math.random() * 9000)}`,
+      biller: newBill.biller,
+      type: newBill.type,
+      amount: parseFloat(newBill.amount),
+      dueDate: newBill.dueDate,
+      status: 'UNPAID',
+      icon: newBill.icon
+    };
+
+    const updatedBills = [...bills, added];
+    setBills(updatedBills);
+    localStorage.setItem('user_bills', JSON.stringify(updatedBills));
+    setIsAddModalOpen(false);
+    setNewBill({ biller: '', type: 'Subscription', amount: '', dueDate: '', icon: 'monitor' });
+  };
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.headerContainer}>
@@ -148,9 +176,14 @@ export default function BillsPage() {
           </svg>
           Back to Transactions
         </Link>
-        <div>
-          <h1 className={styles.heading}>Bills & Subscriptions</h1>
-          <p className={styles.subText}>Manage your upcoming payments and active subscriptions.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            <h1 className={styles.heading}>Bills & Subscriptions</h1>
+            <p className={styles.subText}>Manage your upcoming payments and active subscriptions.</p>
+          </div>
+          <button className={styles.addBtn} onClick={() => setIsAddModalOpen(true)}>
+            + Add New
+          </button>
         </div>
       </div>
 
@@ -192,16 +225,13 @@ export default function BillsPage() {
 
             <div className={styles.cardBottom}>
               {bill.status !== 'PAID' ? (
-                <>
-                  <button className={styles.payBtn} onClick={() => setSelectedBill(bill)}>
-                    Pay Now <ArrowRight size={16} />
-                  </button>
-                  <button className={styles.autopayBtn}>
-                    Auto-Pay
-                  </button>
-                </>
+                <button className={styles.payBtn} onClick={() => setSelectedBill(bill)}>
+                  Pay Now <ArrowRight size={16} />
+                </button>
               ) : (
-                <span className={styles.paidText}>No action required</span>
+                <button className={styles.autopayBtn} style={{ cursor: 'default', opacity: 0.8 }} disabled>
+                  Wait until next due date
+                </button>
               )}
             </div>
           </div>
@@ -247,6 +277,76 @@ export default function BillsPage() {
                 </button>
                 <button type="submit" className={styles.primaryBtn}>
                   Confirm Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAddModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalDialog}>
+            <h3 className={styles.modalTitle}>Add New Bill / Subscription</h3>
+            <form onSubmit={handleAddBill}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Biller Name</label>
+                <input 
+                  type="text" 
+                  className={styles.selectInput}
+                  value={newBill.biller}
+                  onChange={(e) => setNewBill({...newBill, biller: e.target.value})}
+                  required
+                  placeholder="e.g. Spotify"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Category</label>
+                <select 
+                  className={styles.selectInput}
+                  value={newBill.type}
+                  onChange={(e) => {
+                    let icon = 'monitor';
+                    if (e.target.value === 'Utilities') icon = 'zap';
+                    if (e.target.value === 'Internet') icon = 'wifi';
+                    if (e.target.value === 'Membership') icon = 'dumbbell';
+                    setNewBill({...newBill, type: e.target.value, icon});
+                  }}
+                >
+                  <option value="Subscription">Subscription</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Internet">Internet</option>
+                  <option value="Membership">Membership</option>
+                </select>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Amount Due</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className={styles.selectInput}
+                  value={newBill.amount}
+                  onChange={(e) => setNewBill({...newBill, amount: e.target.value})}
+                  required
+                  placeholder="e.g. 15.99"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Due Date</label>
+                <input 
+                  type="date" 
+                  className={styles.selectInput}
+                  value={newBill.dueDate}
+                  onChange={(e) => setNewBill({...newBill, dueDate: e.target.value})}
+                  required
+                />
+              </div>
+              <div className={styles.btnGroup}>
+                <button type="button" className={styles.cancelBtn} onClick={() => setIsAddModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.primaryBtn}>
+                  Add Bill
                 </button>
               </div>
             </form>

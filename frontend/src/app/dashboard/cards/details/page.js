@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle, Sliders, FileText, XCircle } from 'lucide-react';
 import styles from './details.module.css';
 
-export default function CardDetailsPage() {
+function CardDetailsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const cardId = searchParams.get('id');
@@ -129,17 +129,17 @@ export default function CardDetailsPage() {
             </div>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Linked Account</span>
-              <Link href="/dashboard/accounts" className={styles.linkValue}>{card.linkedAccount}</Link>
+              <Link href="/dashboard/accounts" className={styles.linkValue}>{card.linkedAccount || 'Primary Checking'}</Link>
             </div>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Issued Date</span>
-              <span className={styles.infoValue}>{card.issuedDate}</span>
+              <span className={styles.infoValue}>{card.issuedDate || 'Oct 2023'}</span>
             </div>
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>Status</span>
               <div className={styles.statusBadge}>
                 <CheckCircle size={14} />
-                {card.status}
+                {card.status || 'Active'}
               </div>
             </div>
           </div>
@@ -267,5 +267,13 @@ export default function CardDetailsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CardDetailsPage() {
+  return (
+    <Suspense fallback={<div>Loading card details...</div>}>
+      <CardDetailsPageContent />
+    </Suspense>
   );
 }
